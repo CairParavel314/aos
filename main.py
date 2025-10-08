@@ -114,13 +114,18 @@ def estudiante_por_id(estudiante_id):
 @app.route('/api/estudiantes/filtrar')
 def filtrar_estudiantes():
     carrera = request.args.get('carrera', '').upper()
-    nombre = request.args.get('nombre', '').lower()
+    # CAMBIO: Usar getlist() para obtener todos los valores del parámetro 'nombre'
+    nombres = request.args.getlist('nombre')
     semestre = request.args.get('semestre', '')
     
     estudiantes_filtrados = []
     for estudiante in students_db:
         cumple_carrera = not carrera or estudiante['carrera'] == carrera
-        cumple_nombre = not nombre or nombre in estudiante['nombre'].lower()
+        # CAMBIO: Verificar si el nombre coincide con alguno de los nombres proporcionados
+        cumple_nombre = not nombres or any(
+            nombre.lower() in estudiante['nombre'].lower() 
+            for nombre in nombres
+        )
         cumple_semestre = not semestre or str(estudiante['semestre']) == semestre
         
         if cumple_carrera and cumple_nombre and cumple_semestre:
@@ -129,7 +134,7 @@ def filtrar_estudiantes():
     return jsonify({
         "filtros_aplicados": {
             "carrera": carrera if carrera else "todas",
-            "nombre": nombre if nombre else "ninguno",
+            "nombres": nombres if nombres else "ninguno",
             "semestre": semestre if semestre else "todos"
         },
         "total_encontrados": len(estudiantes_filtrados),
@@ -155,3 +160,4 @@ if __name__ == '__main__':
     print("   Body (JSON):")
     print('   {"nombre": "Laura Torres", "carrera": "LIS", "semestre": 2}')
     app.run(debug=False, host='0.0.0.0', port=5000)
+
